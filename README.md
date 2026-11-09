@@ -33,15 +33,32 @@ GtBugbopExplorer withApiKeyFromFile
 
 | View | What it shows |
 |------|---------------|
-| Overview | Account, programs, report counts, triage queue size, bounties awarded, unread notifications, rate limit. Click a row to drill in |
+| Dashboard | Metric tiles (triage queue, critical/high active, bounties, suspected duplicates, scope warnings, AI disagreements, median age) and stacked severity / status bars. Every tile, segment and legend entry drills in |
+| Insights | Entry points to the insight objects below |
+| Board | Kanban by status (forwarded from the triage board) |
 | Triage queue | new / open / needs_info reports, most severe first |
 | All reports | Every report you can see, color-coded by severity and status |
 | Severity x status | Count matrix; click a severity row for its reports |
 | Hunters | Per-hunter reports, fixed/rejected, signal ratio, top severity, bounties |
 | Weekly activity | Reports submitted per week |
-| Programs / Notifications / API calls | |
+| Programs / Notifications / Metrics / API calls | |
 
-Every object drills further: a report has Overview, Description, AI triage, Internal notes, Comments (with a full-thread Transcript), Raw data, and an "Open on bugbop.com" action.
+### Insights
+
+Each insight is its own object (tag `Insights`), so the explorer stays light. Build one from the explorer (`explorer triageBoard`) or from any reports group (`GtBugbopTriageBoard forReports: aGroup`).
+
+| Object | Views |
+|--------|-------|
+| `GtBugbopDashboard` | Dashboard tiles, Severity mix chart, Metrics |
+| `GtBugbopTriageBoard` | Board (kanban with severity stripes, SLA-colored age, scope / duplicate / AI badges), Aging (bars against 7d / 30d SLA bands), Attention (reason tags) |
+| `GtBugbopReportTimeline` | Timeline (severity lanes, colored by status), Calendar heatmap, Cumulative submitted vs valid, Bounties per month |
+| `GtBugbopDuplicateMap` | Duplicate graph (Mondrian; solid = confirmed, dashed = suspected), Clusters, Pending suspicions. Each `GtBugbopDuplicateCluster` has its own graph and side-by-side comparison |
+| `GtBugbopAiTriageReview` | Agreement matrix (assigned vs AI-suggested severity), Disagreements, AI triage summaries |
+| `GtBugbopHunterLandscape` | Treemap (area = reports, color = signal), Quadrant (volume vs signal), Severity profile. Hunters stay grey until 3 reports are resolved |
+
+Every object drills further:
+- A report has Card (pills for severity, status, AI disagreement, scope and duplicates), Overview, Lifecycle (time to first response), Description, AI triage, Internal notes, Comments, Conversation (chat bubbles), Raw data, and an "Open on bugbop.com" action.
+- A hunter has a Profile card.
 
 ## Client API
 

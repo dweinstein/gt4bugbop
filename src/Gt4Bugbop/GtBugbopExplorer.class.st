@@ -26,6 +26,11 @@ GtBugbopExplorer class >> withApiKeyFromFile [
 	^ self new client: GtBugbopClient withApiKeyFromFile
 ]
 
+{ #category : 'insights' }
+GtBugbopExplorer >> aiTriageReview [
+	^ GtBugbopAiTriageReview forReports: self reports
+]
+
 { #category : 'accessing' }
 GtBugbopExplorer >> client [
 	^ client
@@ -34,6 +39,16 @@ GtBugbopExplorer >> client [
 { #category : 'accessing' }
 GtBugbopExplorer >> client: aClient [
 	client := aClient
+]
+
+{ #category : 'insights' }
+GtBugbopExplorer >> dashboard [
+	^ GtBugbopDashboard forExplorer: self
+]
+
+{ #category : 'insights' }
+GtBugbopExplorer >> duplicateMap [
+	^ GtBugbopDuplicateMap forReports: self reports
 ]
 
 { #category : 'accessing' }
@@ -51,6 +66,16 @@ GtBugbopExplorer >> gtActivityFor: aView [
 		view: #gtActivityFor:
 ]
 
+{ #category : 'views' }
+GtBugbopExplorer >> gtBoardFor: aView [
+	<gtView>
+	^ aView forward
+		title: 'Board';
+		priority: 1.5;
+		object: [ self triageBoard ];
+		view: #gtBoardFor:
+]
+
 { #category : 'gt views' }
 GtBugbopExplorer >> gtCallsFor: aView [
 	<gtView>
@@ -62,6 +87,16 @@ GtBugbopExplorer >> gtCallsFor: aView [
 		view: #gtCallsFor:
 ]
 
+{ #category : 'views' }
+GtBugbopExplorer >> gtDashboardFor: aView [
+	<gtView>
+	^ aView forward
+		title: 'Dashboard';
+		priority: 0;
+		object: [ self dashboard ];
+		view: #gtDashboardFor:
+]
+
 { #category : 'gt views' }
 GtBugbopExplorer >> gtHuntersFor: aView [
 	<gtView>
@@ -70,6 +105,18 @@ GtBugbopExplorer >> gtHuntersFor: aView [
 		priority: 5;
 		object: [ self hunters ];
 		view: #gtHuntersFor:
+]
+
+{ #category : 'views' }
+GtBugbopExplorer >> gtInsightsFor: aView [
+	<gtView>
+	^ aView columnedList
+		title: 'Insights';
+		priority: 1;
+		items: [ self insights ];
+		column: 'Insight' text: [ :each | each first asRopedText bold ] width: 160;
+		column: 'Answers' text: [ :each | each second ];
+		send: [ :each | self perform: each third ]
 ]
 
 { #category : 'gt views' }
@@ -92,12 +139,12 @@ GtBugbopExplorer >> gtOpenBugbopActionFor: anAction [
 		action: [ WebBrowser openOn: 'https://bugbop.com' ]
 ]
 
-{ #category : 'gt views' }
+{ #category : 'views' }
 GtBugbopExplorer >> gtOverviewFor: aView [
 	<gtView>
 	^ aView columnedList
-		title: 'Overview';
-		priority: 1;
+		title: 'Metrics';
+		priority: 9;
 		items: [ self metrics ];
 		column: 'Metric' text: [ :each | each label ] width: 260;
 		column: 'Value' text: [ :each | each value gtDisplayString asRopedText bold ];
@@ -157,9 +204,26 @@ GtBugbopExplorer >> gtTriageQueueFor: aView [
 		view: #gtReportsFor:
 ]
 
+{ #category : 'insights' }
+GtBugbopExplorer >> hunterLandscape [
+	^ GtBugbopHunterLandscape forReports: self reports
+]
+
 { #category : 'accessing' }
 GtBugbopExplorer >> hunters [
 	^ self reports hunterSummaries
+]
+
+{ #category : 'insights' }
+GtBugbopExplorer >> insights [
+	"{ title. what it answers. selector building the insight object }"
+	^ {
+		{ 'Dashboard'. 'Headline numbers and severity / status mix'. #dashboard }.
+		{ 'Triage board'. 'Kanban by status, aging against SLAs, what needs attention'. #triageBoard }.
+		{ 'Timeline'. 'When reports arrive: scatter, calendar heatmap, cumulative, bounties'. #timeline }.
+		{ 'Duplicate map'. 'Confirmed and suspected duplicate clusters, pending decisions'. #duplicateMap }.
+		{ 'AI triage review'. 'Where the assigned severity disagrees with Bugbop AI'. #aiTriageReview }.
+		{ 'Hunter landscape'. 'Who reports what: treemap, volume vs signal, severity profiles'. #hunterLandscape } }
 ]
 
 { #category : 'accessing' }
@@ -231,6 +295,16 @@ GtBugbopExplorer >> reports: aReportsGroup [
 { #category : 'accessing' }
 GtBugbopExplorer >> staffPrograms [
 	^ self programs staffPrograms
+]
+
+{ #category : 'insights' }
+GtBugbopExplorer >> timeline [
+	^ GtBugbopReportTimeline forReports: self reports
+]
+
+{ #category : 'insights' }
+GtBugbopExplorer >> triageBoard [
+	^ GtBugbopTriageBoard forReports: self reports
 ]
 
 { #category : 'accessing' }

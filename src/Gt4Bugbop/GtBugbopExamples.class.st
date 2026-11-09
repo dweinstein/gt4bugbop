@@ -115,6 +115,23 @@ GtBugbopExamples >> explorer [
 	^ anExplorer
 ]
 
+{ #category : 'examples - insights' }
+GtBugbopExamples >> explorerInsights [
+	"Every insight listed by the explorer builds from the explorer's reports, and hunters with too few resolved reports stay neutral"
+	<gtExample>
+	<return: #GtBugbopExplorer>
+	| anExplorer aHunter |
+	anExplorer := self explorer.
+	anExplorer reports: self insightsReportsGroup.
+	self assert: anExplorer insights size equals: 6.
+	anExplorer insights do: [ :each | self assert: (anExplorer perform: each third) notNil ].
+	self assert: anExplorer triageBoard class equals: GtBugbopTriageBoard.
+	aHunter := anExplorer reports hunterSummaries items detect: [ :each | each username = 'carol' ].
+	self assert: aHunter hasSignificantSignal not.
+	self assert: aHunter signalColor equals: (GtBugbopHunterLandscape signalColorFor: nil).
+	^ anExplorer
+]
+
 { #category : 'examples - security' }
 GtBugbopExamples >> historyMasksToken [
 	"The token goes on the wire but never into the inspectable request history"
@@ -148,6 +165,50 @@ GtBugbopExamples >> hunterSummaries [
 	self assert: bob rejectedCount equals: 1.
 	self assert: bob signalRatioString equals: '0%'.
 	^ theSummaries
+]
+
+{ #category : 'examples - insights' }
+GtBugbopExamples >> insightsReportJsonWithId: anId title: aTitle status: aStatus severity: aSeverity aiSeverity: anAiSeverity reporter: aUsername bountyCents: anInteger createdAt: anIsoString duplicateOf: aDuplicateId suspectedDuplicateOf: aSuspectedId scopeWarning: aBoolean comments: aCount [
+	^ (self reportJsonWithId: anId title: aTitle status: aStatus severity: aSeverity reporter: aUsername bountyCents: anInteger createdAt: anIsoString)
+		at: 'ai_triage' put: (anAiSeverity ifNotNil: [ '### Severity: ' , anAiSeverity capitalized , String lf , String lf , 'Reasoning.' ]);
+		at: 'duplicate_of_id' put: aDuplicateId;
+		at: 'suspected_duplicate_of_id' put: aSuspectedId;
+		at: 'scope_warning' put: aBoolean;
+		at: 'comments_count' put: aCount;
+		at: 'updated_at' put: anIsoString;
+		yourself
+]
+
+{ #category : 'examples - insights' }
+GtBugbopExamples >> insightsReportsGroup [
+	"A 14-report fixture spanning 8 weeks, with confirmed and suspected duplicate chains, AI severity disagreements, scope warnings and bounties. Shared by the insight examples."
+	<gtExample>
+	<return: #GtBugbopReportsGroup>
+	| aGroup rows |
+	rows := #(
+		#('i1' 'SQL injection in search' 'fixed' 'critical' 'critical' 'alice' 150000 '2025-08-18T09:00:00Z' nil nil false 6)
+		#('i2' 'SQLi via search param (again)' 'duplicate' 'high' 'critical' 'carol' 0 '2025-08-20T12:00:00Z' 'i1' 'i1' false 2)
+		#('i3' 'Search box SQL error leak' 'duplicate' 'medium' 'high' 'dave' 0 '2025-08-25T15:00:00Z' 'i1' 'i1' false 1)
+		#('i4' 'Stored XSS in profile bio' 'fixed' 'high' 'high' 'bob' 50000 '2025-09-01T10:00:00Z' nil nil false 4)
+		#('i5' 'XSS in bio field' 'open' 'medium' 'high' 'erin' 0 '2025-09-03T08:00:00Z' nil 'i4' false 1)
+		#('i6' 'Missing HSTS header' 'not_applicable' 'low' 'low' 'frank' 0 '2025-09-08T11:00:00Z' nil nil true 0)
+		#('i7' 'Staging tenant exposed' 'new' 'low' 'medium' 'frank' 0 '2025-10-20T09:00:00Z' nil nil true 0)
+		#('i8' 'IDOR on invoices' 'open' 'high' 'high' 'alice' 0 '2025-09-22T14:00:00Z' nil nil false 9)
+		#('i9' 'Invoice IDOR via export' 'new' 'high' 'high' 'carol' 0 '2025-10-21T16:00:00Z' nil 'i8' false 0)
+		#('i10' 'Rate limit bypass on login' 'needs_info' 'medium' 'medium' 'bob' 0 '2025-10-01T07:00:00Z' nil nil false 3)
+		#('i11' 'Clickjacking on settings' 'wont_fix' 'low' 'low' 'dave' 0 '2025-09-15T13:00:00Z' nil nil false 1)
+		#('i12' 'RCE via image upload' 'new' 'critical' 'critical' 'alice' 0 '2025-10-22T18:00:00Z' nil nil false 2)
+		#('i13' 'Subdomain takeover' 'fixed' 'medium' 'medium' 'erin' 25000 '2025-09-29T10:00:00Z' nil nil false 5)
+		#('i14' 'Out-of-scope CDN bucket' 'not_applicable' 'low' nil 'frank' 0 '2025-10-06T12:00:00Z' nil nil true 0)).
+	aGroup := GtBugbopReportsGroup from: (rows collect: [ :r |
+		self insightsReportJsonWithId: (r at: 1) title: (r at: 2) status: (r at: 3) severity: (r at: 4) aiSeverity: (r at: 5) reporter: (r at: 6) bountyCents: (r at: 7) createdAt: (r at: 8) duplicateOf: (r at: 9) suspectedDuplicateOf: (r at: 10) scopeWarning: (r at: 11) comments: (r at: 12) ]).
+	self assert: aGroup size equals: 14.
+	self assert: (aGroup items detect: [ :e | e id = 'i3' ]) aiSeverity equals: 'high'.
+	self assert: (aGroup items detect: [ :e | e id = 'i3' ]) aiAgreesOnSeverity not.
+	self assert: (aGroup items detect: [ :e | e id = 'i14' ]) aiSeverity isNil.
+	self assert: (aGroup items select: #hasScopeWarning) size equals: 3.
+	self assert: (aGroup items select: #isSuspectedDuplicate) size equals: 4.
+	^ aGroup
 ]
 
 { #category : 'fixtures' }

@@ -94,6 +94,17 @@ GtBugbopComment >> id: aString [
 	id := aString
 ]
 
+{ #category : 'testing' }
+GtBugbopComment >> isInternal [
+	"Answer whether the comment is an internal (staff-only) note. The public API exposes no such flag today; honour one in metadata if Bugbop adds it."
+	| aMetadata |
+	aMetadata := metadata ifNil: [ ^ false ].
+	aMetadata isDictionary ifFalse: [ ^ false ].
+	(aMetadata at: 'internal' ifAbsent: [ false ]) = true ifTrue: [ ^ true ].
+	(aMetadata at: 'is_internal' ifAbsent: [ false ]) = true ifTrue: [ ^ true ].
+	^ (aMetadata at: 'visibility' ifAbsent: [ nil ]) = 'internal'
+]
+
 { #category : 'accessing' }
 GtBugbopComment >> metadata [
 	^ metadata

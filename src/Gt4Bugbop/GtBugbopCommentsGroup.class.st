@@ -11,11 +11,21 @@ GtBugbopCommentsGroup class >> itemClass [
 	^ GtBugbopComment
 ]
 
-{ #category : 'gt views' }
+{ #category : 'gt - views' }
+GtBugbopCommentsGroup >> gtBubblesFor: aView [
+	<gtView>
+	^ aView forward
+		title: 'Conversation';
+		priority: 0;
+		object: [ (GtBugbopConversation forComments: self) fetched ];
+		view: #gtBubblesFor:
+]
+
+{ #category : 'gt - views' }
 GtBugbopCommentsGroup >> gtConversationFor: aView [
 	<gtView>
 	^ aView columnedList
-		title: 'Conversation';
+		title: 'List';
 		priority: 1;
 		items: [ self items ];
 		column: 'When' text: [ :each | each createdAt ifNil: [ '' ] ifNotNil: [ :aTime | aTime asLocal printString first: 16 ] ] width: 130;

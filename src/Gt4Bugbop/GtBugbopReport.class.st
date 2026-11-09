@@ -87,12 +87,15 @@ GtBugbopReport class >> severityText: aSeverity [
 		foreground: (self severityColorFor: aSeverity)
 ]
 
-{ #category : 'vocabulary' }
+{ #category : 'accessing' }
 GtBugbopReport class >> statusColorFor: aStatus [
 	aStatus = 'new' ifTrue: [ ^ Color fromHexString: '6A1B9A' ].
 	aStatus = 'open' ifTrue: [ ^ Color fromHexString: '1565C0' ].
 	aStatus = 'needs_info' ifTrue: [ ^ Color fromHexString: 'EF6C00' ].
 	aStatus = 'fixed' ifTrue: [ ^ Color fromHexString: '2E7D32' ].
+	aStatus = 'wont_fix' ifTrue: [ ^ Color fromHexString: '78909C' ].
+	aStatus = 'duplicate' ifTrue: [ ^ Color fromHexString: 'A1887F' ].
+	aStatus = 'not_applicable' ifTrue: [ ^ Color fromHexString: 'BDBDBD' ].
 	^ Color gray
 ]
 
@@ -122,12 +125,36 @@ GtBugbopReport >> age [
 ]
 
 { #category : 'accessing' }
+GtBugbopReport >> ageInDays [
+	"Answer whole days since submission, or nil when unknown"
+	^ self age ifNotNil: [ :aDuration | aDuration days ]
+]
+
+{ #category : 'accessing' }
 GtBugbopReport >> ageString [
 	| days |
 	createdAt ifNil: [ ^ '' ].
 	days := self age days.
 	days >= 1 ifTrue: [ ^ days printString , 'd' ].
 	^ self age hours printString , 'h'
+]
+
+{ #category : 'testing' }
+GtBugbopReport >> aiAgreesOnSeverity [
+	"Answer whether the assigned severity matches the AI suggestion; true when there is no suggestion"
+	^ self aiSeverity isNil or: [ self aiSeverity = severity ]
+]
+
+{ #category : 'accessing - triage' }
+GtBugbopReport >> aiSeverity [
+	"Answer the severity suggested by Bugbop's AI triage (its first '### Severity: X' line), or nil"
+	| aLine |
+	aiTriage ifNil: [ ^ nil ].
+	aLine := aiTriage lines
+			detect: [ :each | each trimBoth asLowercase beginsWith: '### severity:' ]
+			ifNone: [ ^ nil ].
+	^ (aLine copyAfter: $:) trimBoth asLowercase
+		ifEmpty: [ nil ]
 ]
 
 { #category : 'accessing' }
@@ -168,6 +195,12 @@ GtBugbopReport >> bountyTotalCents: anInteger [
 	bountyTotalCents := anInteger
 ]
 
+{ #category : 'accessing - visuals' }
+GtBugbopReport >> card [
+	"A header-card presentation of me, see GtBugbopReportCard"
+	^ GtBugbopReportCard forReport: self
+]
+
 { #category : 'api' }
 GtBugbopReport >> comments [
 	^ self client commentsForReport: self
@@ -191,6 +224,12 @@ GtBugbopReport >> commentsUrl [
 { #category : 'accessing' }
 GtBugbopReport >> commentsUrl: aString [
 	commentsUrl := aString
+]
+
+{ #category : 'accessing - visuals' }
+GtBugbopReport >> conversation [
+	"My comments attributed to hunter / program team sides, see GtBugbopConversation. Comments load lazily (send #fetched off the UI thread)."
+	^ GtBugbopConversation forReport: self
 ]
 
 { #category : 'accessing' }
@@ -239,6 +278,15 @@ GtBugbopReport >> gtAiTriageFor: aView [
 		text: [ aiTriage asRopedText ]
 ]
 
+{ #category : 'gt - views' }
+GtBugbopReport >> gtCardFor: aView [
+	<gtView>
+	^ aView explicit
+		title: 'Card';
+		priority: 0;
+		stencil: [ self card asElement ]
+]
+
 { #category : 'gt views' }
 GtBugbopReport >> gtCommentsFor: aView [
 	<gtView>
@@ -249,6 +297,16 @@ GtBugbopReport >> gtCommentsFor: aView [
 		priority: 5;
 		object: [ self comments ];
 		view: #gtConversationFor:
+]
+
+{ #category : 'gt - views' }
+GtBugbopReport >> gtConversationFor: aView [
+	<gtView>
+	^ aView forward
+		title: 'Conversation';
+		priority: 5.5;
+		object: [ self conversation fetched ];
+		view: #gtBubblesFor:
 ]
 
 { #category : 'gt views' }
@@ -271,6 +329,16 @@ GtBugbopReport >> gtInternalNotesFor: aView [
 		text: [ internalNotes asRopedText ]
 ]
 
+{ #category : 'gt - views' }
+GtBugbopReport >> gtLifecycleFor: aView [
+	<gtView>
+	^ aView forward
+		title: 'Lifecycle';
+		priority: 1.5;
+		object: [ self conversation fetched ];
+		view: #gtLifecycleFor:
+]
+
 { #category : 'gt views' }
 GtBugbopReport >> gtOverviewFor: aView [
 	<gtView>
@@ -286,6 +354,11 @@ GtBugbopReport >> gtOverviewFor: aView [
 { #category : 'testing' }
 GtBugbopReport >> hasBounty [
 	^ bountyTotalCents notNil and: [ bountyTotalCents > 0 ]
+]
+
+{ #category : 'testing' }
+GtBugbopReport >> hasScopeWarning [
+	^ scopeWarning = true
 ]
 
 { #category : 'comparing' }
@@ -334,6 +407,11 @@ GtBugbopReport >> isReference [
 { #category : 'testing' }
 GtBugbopReport >> isResolved [
 	^ self isActive not
+]
+
+{ #category : 'testing' }
+GtBugbopReport >> isSuspectedDuplicate [
+	^ suspectedDuplicateOfId notNil
 ]
 
 { #category : 'testing' }
@@ -430,6 +508,11 @@ GtBugbopReport >> severity: aString [
 ]
 
 { #category : 'accessing' }
+GtBugbopReport >> severityColor [
+	^ self class severityColorFor: severity
+]
+
+{ #category : 'accessing' }
 GtBugbopReport >> severityRank [
 	^ self class severityRankOf: severity
 ]
@@ -443,6 +526,11 @@ GtBugbopReport >> status [
 { #category : 'accessing' }
 GtBugbopReport >> status: aString [
 	status := aString
+]
+
+{ #category : 'accessing' }
+GtBugbopReport >> statusColor [
+	^ self class statusColorFor: status
 ]
 
 { #category : 'api' }
