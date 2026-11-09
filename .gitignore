@@ -1,0 +1,5 @@
+# secrets — the API key lives in ~/.secrets/bugbop-api-key.txt
+.envrc
+.env
+*.txt.secret
+.DS_Store
