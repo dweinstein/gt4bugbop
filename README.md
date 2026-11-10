@@ -13,18 +13,33 @@ It has two parts:
 
 ## Load
 
+In a [Glamorous Toolkit](https://gtoolkit.com/download/) image, run this in a Playground:
+
 ```smalltalk
 Metacello new
-	repository: 'gitlocal:///Users/user/work/gtoolkit/gt4bugbop/src';
+	repository: 'github://dweinstein/gt4bugbop:main/src';
 	baseline: 'Gt4Bugbop';
 	load.
 ```
 
-To reload the working copy into a running image (including uncommitted changes):
+Iceberg clones the repository into the image's `pharo-local/iceberg/` directory and registers it, so you can commit and pull from the Git tool.
+
+### Developing from a local clone
+
+If you've already cloned the repository, load it from disk instead. Adjust the path; this example assumes `~/src/gt4bugbop`:
+
+```smalltalk
+Metacello new
+	repository: 'gitlocal://' , (FileLocator home / 'src' / 'gt4bugbop' / 'src') fullName;
+	baseline: 'Gt4Bugbop';
+	load.
+```
+
+To reload the working copy into a running image, including uncommitted changes:
 
 ```smalltalk
 (TonelReader
-	on: '/Users/user/work/gtoolkit/gt4bugbop/src' asFileReference
+	on: FileLocator home / 'src' / 'gt4bugbop' / 'src'
 	fileName: 'Gt4Bugbop') version load.
 ```
 
@@ -166,7 +181,10 @@ The images in `docs/screenshots/` are generated from examples, so they always ma
 
 ```smalltalk
 GtBugbopScreenshots default
-	exportTo: '/Users/user/work/gtoolkit/gt4bugbop/docs/screenshots' asFileReference
+	exportTo: (IceRepository registry
+		detect: [ :each | each name = 'gt4bugbop' ]) location / 'docs' / 'screenshots'
 ```
+
+This writes into the clone Iceberg registered for `gt4bugbop`. Commit the PNGs from there.
 
 The shots only use offline examples; `GtBugbopExamples>>#screenshots` checks that none of them is a live example. That keeps real report, hunter and program data out of the repository.
