@@ -134,6 +134,7 @@ GtBugbopReportVisualsExamples >> formatting [
 		GtBugbopVisuals durationString: 10 days.
 		GtBugbopVisuals durationString: 400 days }.
 	self assert: durations equals: #('1d 4h' '5h 12m' '10d' '13mo').
+	"Handles with digits keep them: the first two characters, upper-cased"
 	self assert: (GtBugbopVisuals initialsOf: 'z3r0c00l') equals: 'Z3'.
 	self assert: (GtBugbopVisuals initialsOf: '') equals: '?'.
 	self assert: (GtBugbopVisuals excerptOf: 'short' limit: 600) equals: 'short'.

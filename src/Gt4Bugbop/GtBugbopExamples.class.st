@@ -538,6 +538,21 @@ GtBugbopExamples >> reportsGroup [
 	^ aGroup
 ]
 
+{ #category : 'examples - docs' }
+GtBugbopExamples >> screenshots [
+	"The README screenshots render offline examples only, at their declared size"
+	<gtExample>
+	<return: #GtBugbopScreenshots>
+	| aSet aForm |
+	aSet := GtBugbopScreenshots default.
+	self assert: aSet shots size equals: 12.
+	self assert: (aSet shots collect: #fileName) asSet size equals: 12.
+	self assert: (aSet shots noneSatisfy: [ :each | each exampleMethod hasPragmaNamed: #noTest ]).
+	aForm := (aSet named: 'report-card.png') asForm.
+	self assert: aForm extent equals: (aSet named: 'report-card.png') extent.
+	^ aSet
+]
+
 { #category : 'fixtures' }
 GtBugbopExamples >> stubClientResponding: aBlock [
 	"A GtBugbopClient whose requests are answered by aBlock (ZnRequest -> ZnResponse), never the network"
